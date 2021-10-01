@@ -1,5 +1,6 @@
-from os import stat
 import socket
+
+
 
 class MySocket:
 	"""
@@ -7,22 +8,35 @@ class MySocket:
 		The socket sends the data with a header, which specifies, how big the afterwards comming message is.
 		The header is obviously a constant and therefore we have a limit how much we can send at once.
 	"""
-	def __init__(self, client_socket:socket.socket = None):
-		self.header = 2048
+	def __init__(self, client_socket:socket.socket = None, adress_family:socket.AddressFamily = socket.AF_INET, socket_kind:socket.SocketKind = socket.SOCK_STREAM):
+		self.header = 128
 		if client_socket == None:
-			self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+				self.sock = socket.socket(adress_family, socket_kind)
 		else:
 			self.sock = client_socket
+
+	@classmethod
+	def create_connection(self, address:tuple):
+		"""
+			Creates a socket object and already connects only via TCPto it(IPv4 or IPv6)
+		"""
+		return MySocket(socket.create_connection(address))
 	
-	def connect(self, host:str, port:int):
-		self.sock.connect((host, port))
+	def connect(self, address:tuple):
+		self.sock.connect(address)
 
 	def recv(self) -> bytes:
+		"""
+			Ensures, that all the bytes, the header defines are recived.
+		"""
 		data_size = int(self.sock.recv(self.header))
 		data = self.sock.recv(data_size)
 		return data
 	
 	def send(self, data: bytes):
+		"""
+			Ensures, that all the bytes are sent and the header first.
+		"""
 		data_size = len(data)
 		data_size_str = str(data_size)
 		data_size_bytes = bytes(data_size_str, "utf-8")
@@ -38,9 +52,9 @@ class MySocket:
 		# Maybe send close to the other side
 		self.sock.close()
 
-	def shutdown(self):
+	def shutdown(self, how:int):
 		# Maybe send shutdown to the other side
-		self.sock.shutdown()
+		self.sock.shutdown(how)
 
 	
 	def _send(self, data: bytes):
