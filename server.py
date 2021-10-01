@@ -1,8 +1,10 @@
+from MySocket import *
+import time
+import json
 import socket   # https://docs.python.org/3/howto/sockets.html
 import os
 import threading
 import signal
-
 from linux import *
 
 os.system("clear")
@@ -29,7 +31,7 @@ class client_handler(threading.Thread):
 
 
 
-client_handler_threads = list()
+#client_handler_threads = list()
 
 
 class samba_remote_server:
@@ -58,24 +60,24 @@ class samba_remote_server:
 
 
 
-server = samba_remote_server(("", 9090))
+#server = samba_remote_server(("", 9090))
 
 
-if __name__ == "__main__":
-	while True:
-
-		# Check if we have threads, which finished to run
-		for thread in client_handler_threads:
-			if not thread.is_alive():
-				thread.join()
-				client_handler_threads.remove(thread)
-		
-
-		# if the server is closed, handle the still active clients and then exit
-		if server.server_is_running == False:
-			for thread in client_handler_threads:
-				thread.join()
-				exit()
+#if __name__ == "__main__":
+#	while True:
+#
+#		# Check if we have threads, which finished to run
+#		for thread in client_handler_threads:
+#			if not thread.is_alive():
+#				thread.join()
+#				client_handler_threads.remove(thread)
+#		
+#
+#		# if the server is closed, handle the still active clients and then exit
+#		if server.server_is_running == False:
+#			for thread in client_handler_threads:
+#				thread.join()
+#				exit()
 
 
 PORT = 9090
@@ -87,25 +89,34 @@ print("The system supports IPv6?: " + str(socket.has_ipv6))  # Has IPv6?
 print("Platform supports both IPv4 and IPv6 socket stream connections: " + str(socket.has_dualstack_ipv6()))
 
 
-"""
-Same as:
-server_socket = socket.socket(family=socket.AF_INET, type=socket.SOCK_STREAM)
-server_socket.bind(ADDRESS)
-server_socket.listen()
-"""
-server_socket = socket.create_server(ADDRESS, family=socket.AF_INET)	# https://docs.python.org/3/library/socket.html#socket.create_server
+
+
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind(ADDRESS)
+server.listen()
+
 
 while True:
-	connection_socket, address = server_socket.accept()
-	recv_data = str
-	while True:
-		recv_data = str(connection_socket.recv(2048), "utf-8")
-		print(recv_data)
-		if(recv_data == "exit"):
-			break
-	connection_socket.send(bytes("DISCONNECTING...", "utf-8"))
-	connection_socket.close()
-	if(recv_data == "quit"):
+	print("Listening for client connections....")
+	(client_socket, client_addr) = server.accept()
+	mysocket = MySocket(client_socket)
+
+	mysocket.header = 8192
+	send_data = input("Eingabe: ")
+	send_data_bytes = send_data.encode("utf-8")
+	mysocket.send(send_data_bytes)
+	print(f"sent {len(send_data_bytes)} bytes of data")
+	print("waiting for a message")
+	
+	recv_data = mysocket.recv()
+	print(f"recived {len(recv_data)} bytes of data")
+	recv_data = recv_data.decode("utf-8")
+	print(recv_data)
+	if recv_data == "exit":
+		mysocket.shutdown(socket.SHUT_RDWR)
+		mysocket.close()
 		break
 
-server_socket.close()
+server.shutdown(socket.SHUT_RDWR)
+server.close()
+
