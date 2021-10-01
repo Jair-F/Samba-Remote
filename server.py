@@ -5,10 +5,33 @@ import socket   # https://docs.python.org/3/howto/sockets.html
 import os
 import threading
 import signal
+import subprocess
+import sys
 from linux import *
 
 os.system("clear")
 
+host = input("Server-Hostname: ")
+username = input("Username: ")
+oldpassword = input("Old Password: ")
+newpassword = input("New Password: ")
+verify_password = input("New Password: ")
+
+if newpassword != verify_password:	# Verify that the password is spelled correct
+	print("New Passwords dont match!!", file=sys.stderr)
+	exit(-1)
+
+process=subprocess.run(args=["smbpasswd", "-s", "-r", host, "-U", username], input=f"{oldpassword}\n{newpassword}\n{newpassword}\n".encode("utf-8"), stdout=subprocess.PIPE, stderr = subprocess.PIPE)
+print(process.args)
+print("stdout:")
+print(process.stdout.decode("utf-8"))
+print("stderr:")
+print(process.stderr.decode("utf-8"))
+print("returncode:")
+print(process.returncode)
+
+
+exit()
 
 user_list = get_linux_users_list()
 for user in user_list:
@@ -94,6 +117,7 @@ print("Platform supports both IPv4 and IPv6 socket stream connections: " + str(s
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(ADDRESS)
 server.listen()
+
 
 
 while True:
