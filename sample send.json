@@ -1,0 +1,14 @@
+{
+	"Message_Type": "Command/user list/open_connection_message",
+	"Message": {
+		"Users": ["jair", "david"],
+		"Command": "change password/reboot/shutdown/add user/delete user/run update",
+		"Password": "asdf_1234",
+		"User": "user",
+		"UserType": "normal_user/super_user",
+		"AbleToLogin": false
+	},
+
+
+	"Version": 1.0
+}
