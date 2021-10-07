@@ -76,7 +76,7 @@ class MySocket:
 		sent_bytes = 0
 		header = len(data)
 		while sent_bytes < header:
-			sent = self.sock.send(data)
+			sent = self.sock.send(data[sent_bytes:])
 			if sent == 0:
 				raise BrokenPipeError("Socket connection broken")
 			else:
