@@ -23,22 +23,23 @@ FORMAT = "utf-8"
 VERSION = 1.0
 
 
-try:
-	client_socket = MySocket.create_connection(ADDRESS)
-except ConnectionRefusedError as err:
-	print("Connection was refused by the server")
-	input("Press ENTER to exit...")
-	exit(-1)
-
-print(f"Connection established to {server}")
-
-
 
 if __name__ == "__main__":
 	# Check Python-Version
 	if sys.version_info.major < 3:
 		print("Please use Python 3 or higher", file=sys.stderr)
 		exit(-1)
+
+
+	try:
+		client_socket = MySocket.create_connection(ADDRESS)
+	except ConnectionRefusedError as err:
+		print("Connection was refused by the server")
+		input("Press ENTER to exit...")
+		exit(-1)
+
+	print(f"Connection established to {server}")
+
 
 	print("\nChange Samba-Password")
 	user_name = input("Username: ")
