@@ -1,4 +1,5 @@
 from MySocket import *
+from utils import *
 import time
 import json
 import socket   # https://docs.python.org/3/howto/sockets.html
@@ -7,13 +8,16 @@ import threading
 import signal
 import subprocess
 import sys
-from utils import *
+import pwd
+import grp
 
-os.system("cls")
+os.system("clear")
 
+MIN_PYTHON_VERSION = (3, 10)
 
 CONFIG_FILE_PATH = "/etc/SambaRemote/config.config"
 EXECUTABLE_PATH = "/usr/bin/SambaRemote"
+SUDO_GROUP = "sudo"
 VERSION = 1.0
 
 
@@ -23,7 +27,7 @@ Message_Types = {
 	"Close_Connection_Message": "Close_Connection_Message"
 }
 Commands = {
-	"Change_Password": "Change_Password",
+	"Change_Samba_Password": "Change_Samba_Password",
 }
 
 
@@ -31,15 +35,24 @@ message_handler = {
 	"Command": {
 		"Change_Samba_Password": change_samba_password,
 	}
-
 }
 
+class linux_user:
+	def __init__(self, user_name:str):
+		# Check if the username exist on the system
+		self.user_exists = True
+		try:
+			pwd.getpwnam(user_name)
+		except KeyError as err:
+			self.user_exists = False
+		self.user_name = user_name
 
 class client_handler(threading.Thread):
 	"""
 		Handles the socket-connection with the client and runs the requested commands/actions
 	"""
 	def __init__(self, client_sock:MySocket, client_addr):
+		threading.Thread.__init__(self)
 		self.client_sock = client_sock
 		self.client_addr = client_addr
 
@@ -47,122 +60,131 @@ class client_handler(threading.Thread):
 		"""
 			handles connection and command execution
 		"""
-
-		# open the connection and send the version
-		send_msg = {}
-		send_msg["MessageType"] = Message_Types["Open_Connection_Message"]
-		send_msg["Version"] = VERSION
-		self.client_sock.send(json.dumps(send_msg).encode(FORMAT))	# Load the message into a json-string and convert this string to a byte-sequence
-
+		# recieve firstly the data, the client sent
+		recv_msg = str(self.client_sock.recv(), FORMAT)
+		recv_msg = json.loads(recv_msg)
+		send_msg = None
+		self.user = linux_user(recv_msg["Message"]["Username"])
+		if self.user.user_exists == False:
+			send_msg = {
+				"Message_Type": Message_Types["ServerResponse"],
+				"ServerResponse": {
+					"Message": f"User \"{self.user.user_name}\" does not exist"
+				}
+			}
+			self.client_sock.send(json.dumps(send_msg).encode(FORMAT))
+			client_socket.send(json.dumps({"Message_Type" : Message_Types["Close_Connection_Message"]}).encode(FORMAT))
+			client_socket.shutdown(socket.SHUT_RDWR)
+			client_socket.close()
+		
 		try:
 			while True:
-				recv_msg = str(client_socket.recv(), FORMAT)
-				recv_msg = json.loads(recv_msg)
-				return_message = {}
+				return_message = {
+					"Message_Type": Message_Types["ServerResponse"],
+					"ServerResponse": {
+						
+					}
+				}
 				try:
 					if recv_msg["Message_Type"] == Message_Types["Command"]:
-						if recv_msg["Message"]["Command"] == Commands["Change_Password"]:
+						if recv_msg["Message"]["Command"] == Commands["Change_Samba_Password"]:
 							username = recv_msg["Message"]["Username"]
 							old_password = recv_msg["Message"]["OldPassword"]
 							new_password = recv_msg["Message"]["NewPassword"]
 
+							print(f"[RUNNING COMMAND] Changing password for user {username}")
+
 							(returncode, command_output) = change_samba_password(username, old_password, new_password)
 							if "NT_STATUS_LOGON_FAILURE" in command_output:
-								return_message[Message_Types["ServerResponse"]]["Response"] = "Either the Samba-Server is not running or your password/username is not correct"
+								return_message["ServerResponse"]["Message"] = "Either the Server is not running or your password/username is not correct"
 							else:
-								return_message[Message_Types["ServerResponse"]]["Response"] = command_output
-						
-						self.client_sock.send(return_message)	# Send a response to the client
+								return_message["ServerResponse"]["Message"] = f"Password successfully changed for user {username}"
+						return_message = json.dumps(return_message)
+						self.client_sock.send(return_message.encode(FORMAT))	# Send a response to the client
 
 
 					elif recv_msg["Message_Type"] == Message_Types["Close_Connection_Message"]:
-						print("the connection was closed by the client.")
+						print("[CONNECTION CLOSED] the connection was closed by the client.")
 						self.client_sock.shutdown(socket.SHUT_RDWR)
 						self.client_sock.close()
+						return
 				
 				except KeyError as err:
-					print("A required parameter/value is missing in client-message:")
+					print("[ERROR] A required parameter/value is missing in clients-message:")
 					print(err.args)
+
+				# Wait for the clients next message
+				recv_msg = str(self.client_sock.recv(), FORMAT)
+				recv_msg = json.loads(recv_msg)
 
 		
 		except BrokenPipeError as err:
-			print("Connection to the client is broken")
-		except...:
-			print("An Unknown error occurd")
+			print("[BROKEN PIPE]Connection to the client is broken")
+		except ConnectionResetError as err:
+			print("[CONNECTION RESET] Connection reseted by the client")
+		except ConnectionError as err:
+			print("[CONNECTION ERROR] " + str(err.args))
+	
 
-
-
-
-#client_handler_threads = list()
-
-
-
-
-
-#if __name__ == "__main__":
-#	while True:
-#
-#		# Check if we have threads, which finished to run
-#		for thread in client_handler_threads:
-#			if not thread.is_alive():
-#				thread.join()
-#				client_handler_threads.remove(thread)
-#		
-#
-#		# if the server is closed, handle the still active clients and then exit
-#		if server.server_is_running == False:
-#			for thread in client_handler_threads:
-#				thread.join()
-#				exit()
 
 
 PORT = 9090
-SERVER = ""
+SERVER_BIND_ADDRESS = ""
 FORMAT = "utf-8"
-ADDRESS = (SERVER, PORT)    # tuple
-
-
-if __name__ == "__main__":
-	pass
-
-print("The system supports IPv6?: " + str(socket.has_ipv6))  # Has IPv6?
-print("Platform supports both IPv4 and IPv6 socket stream connections: " + str(socket.has_dualstack_ipv6()))
+ADDRESS = (SERVER_BIND_ADDRESS, PORT)    # tuple
 
 socket_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 socket_server.bind(ADDRESS)
 socket_server.listen()
 
+client_handler_threads = list()
+
 def terminate_handler():
 	"""
 		the handler, if the proccess gets the signal SIGTERM
 	"""
-	# Shutdown the connections with the clients(maybe send message, that the server will restart) and exit
+	print("Called terminate_handler")
+	# Shutdown the server - dont accept new connections
 	socket_server.shutdown(socket.SHUT_RDWR)
 	socket_server.close()
+
+	# Force Close all current connections
+	for thread in client_handler_threads:
+		pass
+	print("everything is closed...exciting")
 	exit(0)
 
 terminate_handler = signal.signal(signal.SIGTERM, terminate_handler)
 
-while True:
-	
-	print("Listening for client connections....")
-	(client_socket, client_addr) = socket_server.accept()
-	mysocket = MySocket(client_socket)
 
-	send_data = input("Eingabe: ")
-	send_data_bytes = send_data.encode("utf-8")
-	mysocket.send(send_data_bytes)
-	print(f"sent {len(send_data_bytes)} bytes of data")
-	print("waiting for a message")
+if __name__ == "__main__":
+	# Check the version, we are running
+	if sys.version_info.major < MIN_PYTHON_VERSION[0] or sys.version_info.minor < MIN_PYTHON_VERSION[1]:
+		print("[ERROR] Please use a Python-Interpreter-Version higher than " + str(MIN_PYTHON_VERSION))
+		exit(-1)
 	
-	recv_data = mysocket.recv()
-	print(f"recived {len(recv_data)} bytes of data")
-	#recv_data = recv_data.decode("utf-8")
-	print(recv_data)
-	if recv_data == "exit":
-		mysocket.shutdown(socket.SHUT_RDWR)
-		mysocket.close()
-		break
+	while True:
+		print(f"[LISTENING] Server is listening at the port {PORT} for client-connections....")
+		(client_socket, client_addr) = socket_server.accept()
+		client_thread = client_handler(MySocket(client_socket), client_addr)
+		client_thread.start()
+		client_handler_threads.append(client_thread)
+
+		print(f"[NEW CONNECTION] Client {client_addr} connected to the Server")
+
+		# Check if we have threads, which finished to run
+		for thread in client_handler_threads:
+			if not thread.is_alive():
+				thread.join()
+				client_handler_threads.remove(thread)
+		
+		print("Num of running threads: " + str(len(client_handler_threads)))
+
+
+
+print("The system supports IPv6?: " + str(socket.has_ipv6))  # Has IPv6?
+print("Platform supports both IPv4 and IPv6 socket stream connections: " + str(socket.has_dualstack_ipv6()))
+
 
 socket_server.shutdown(socket.SHUT_RDWR)
 socket_server.close()
