@@ -35,6 +35,11 @@ print(f"Connection established to {server}")
 
 
 if __name__ == "__main__":
+	# Check Python-Version
+	if sys.version_info.major < 3:
+		print("Please use Python 3 or higher", file=sys.stderr)
+		exit(-1)
+
 	print("\nChange Samba-Password")
 	user_name = input("Username: ")
 	old_password = input("Old password: ")
