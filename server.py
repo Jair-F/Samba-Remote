@@ -40,11 +40,12 @@ message_handler = {
 class linux_user:
 	def __init__(self, user_name:str):
 		# Check if the username exist on the system
-		self.user_exists = True
 		try:
 			pwd.getpwnam(user_name)
 		except KeyError as err:
 			self.user_exists = False
+		else:	# if no exception was raised - user exists
+			self.user_exists = True
 		self.user_name = user_name
 
 class client_handler(threading.Thread):
@@ -76,6 +77,7 @@ class client_handler(threading.Thread):
 			client_socket.send(json.dumps({"Message_Type" : Message_Types["Close_Connection_Message"]}).encode(FORMAT))
 			client_socket.shutdown(socket.SHUT_RDWR)
 			client_socket.close()
+			return	# Exit the thread - user does not exist
 		
 		try:
 			while True:
@@ -139,7 +141,7 @@ socket_server.listen()
 
 client_handler_threads = list()
 
-def terminate_handler():
+def terminate_handler(signa_lnumber, stack_frame):
 	"""
 		the handler, if the proccess gets the signal SIGTERM
 	"""
