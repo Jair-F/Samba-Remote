@@ -22,7 +22,14 @@ ADDRESS = (server, PORT)    # tuple
 FORMAT = "utf-8"
 VERSION = 1.0
 
-client_socket = MySocket.create_connection(ADDRESS)
+
+try:
+	client_socket = MySocket.create_connection(ADDRESS)
+except ConnectionRefusedError as err:
+	print("Connection was refused by the server")
+	input("Press ENTER to exit...")
+	exit(-1)
+
 print(f"Connection established to {server}")
 
 
