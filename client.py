@@ -1,12 +1,8 @@
-from typing import Any
 from MySocket import *
 import socket
 import sys
 import os
 import json
-import argparse
-import configparser
-import random
 
 
 os.system("clear")
@@ -60,3 +56,5 @@ if __name__ == "__main__":
 
 	client_socket.shutdown(socket.SHUT_RDWR)
 	client_socket.close()
+
+input("Press Enter to exit...")
