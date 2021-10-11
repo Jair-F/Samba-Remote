@@ -31,12 +31,12 @@ class MySocket:
 			Ensures, that all the bytes, the header defines are recived.
 		"""
 		header = self.sock.recv(self.HEADER_SIZE)
-		if header == 0:	# Check if the connection isnt brokden
+		if len(header) == 0:	# Check if the connection isnt brokden
 			raise BrokenPipeError("Socket connection broken")
 		header = int(header.decode(self.HEADER_FORMAT))
 
 		data = self.sock.recv(header)
-		if data == 0:	# Check if the connection isnt brokden
+		if len(data) == 0:	# Check if the connection isnt brokden
 			raise BrokenPipeError("Socket connection broken")
 		return data
 
