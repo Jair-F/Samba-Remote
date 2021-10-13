@@ -3,6 +3,7 @@ import socket
 import sys
 import os
 import json
+import configparser
 
 
 os.system("clear")
@@ -16,11 +17,12 @@ Commands = {
 	"Change_Samba_Password": "Change_Samba_Password",
 }
 
-PORT = 9090
-server = input("Server-IP/Domain: ")
-ADDRESS = (server, PORT)    # tuple
+PORT = 0
+SERVER = ""
+ADDRESS = ()    # tuple
 FORMAT = "utf-8"
 VERSION = 1.0
+DEFAULT_CONFIG_FILE_PATH = "default_config.ini"
 
 
 
@@ -30,15 +32,37 @@ if __name__ == "__main__":
 		print("Please use Python 3 or higher", file=sys.stderr)
 		exit(-1)
 
+	conf_parser = configparser.ConfigParser()
+	try:
+		conf_parser.read(DEFAULT_CONFIG_FILE_PATH)
+	except configparser.ParsingError as err:
+		print(f"Error while parsing {DEFAULT_CONFIG_FILE_PATH} - no default values: " + err.message)
+
+	try:
+		PORT = conf_parser["DEFAULT"]["Port"]
+		SERVER = conf_parser["DEFAULT"]["Server"]
+	except KeyError as err:
+		print("KeyError: " + str(err.args))
+
+	user_input = input(f"Server-IP/Domain[ENTER={SERVER}]: ")
+	SERVER = SERVER if len(user_input) == 0 else user_input
+
+	user_input = input(f"Server-Port[ENTER={PORT}]: ")
+	PORT = PORT if len(user_input) == 0 else user_input
+
+	ADDRESS = (SERVER, PORT)
 
 	try:
 		client_socket = MySocket.create_connection(ADDRESS)
 	except ConnectionRefusedError as err:
-		print("Connection was refused by the server")
+		print("Connection was refused by the server", file=sys.stderr)
 		input("Press ENTER to exit...")
 		exit(-1)
+	except socket.gaierror as err:	# get-address-info-error
+		print("Wrong Address - Address could not be resolved", file=sys.stderr)
+		exit(-1)
 
-	print(f"Connection established to {server}")
+	print(f"Connection established to {SERVER}")
 
 
 	print("\nChange Samba-Password")
@@ -60,14 +84,22 @@ if __name__ == "__main__":
 		},
 		"Version": VERSION
 	}
-	client_socket.send(json.dumps(send_msg).encode(FORMAT))
+	try:
+		client_socket.send(json.dumps(send_msg).encode(FORMAT))
 
-	recv_msg = json.loads(client_socket.recv())
-	print(recv_msg["ServerResponse"]["Message"])
-	
-	client_socket.send(json.dumps({"Message_Type" : Message_Types["Close_Connection_Message"]}).encode(FORMAT))
+		recv_msg = json.loads(client_socket.recv())
+		print(recv_msg["ServerResponse"]["Message"])
 
-	client_socket.shutdown(socket.SHUT_RDWR)
-	client_socket.close()
+		if not client_socket.connection_closed:
+			client_socket.close()
+		
+	except BrokenPipeError as err:
+		print("The pipe to the Server is broken", file=sys.stderr)
+	except ConnectionResetError as err:
+		print("The Connection was reseted by the peer", file=sys.stderr)
+	except ConnectionAbortedError as err:
+		print("The Connection to the server aborted", file=sys.stderr)
+	except ConnectionResetError as err:
+		print("The connection was refused by the server", file=sys.stderr)
 
 input("Press Enter to exit...")
