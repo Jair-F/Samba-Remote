@@ -38,15 +38,22 @@ message_handler = {
 }
 
 class linux_user:
-	def __init__(self, user_name:str):
+	def __init__(self, user_name:str=None):
 		# Check if the username exist on the system
+		if user_name != None:
+			self.check_user_exist(user_name)
+		else:
+			self.user_name = None
+			self.user_exists = False
+		
+	def check_user_exist(self, user_name:str):
+		self.user_name = user_name
 		try:
 			pwd.getpwnam(user_name)
 		except KeyError as err:
 			self.user_exists = False
-		else:	# if no exception was raised - user exists
+		else:	# if no exception was raised the user exists
 			self.user_exists = True
-		self.user_name = user_name
 
 class client_handler(threading.Thread):
 	"""
@@ -61,75 +68,80 @@ class client_handler(threading.Thread):
 		"""
 			handles connection and command execution
 		"""
-		# recieve firstly the data, the client sent
-		recv_msg = str(self.client_sock.recv(), FORMAT)
-		recv_msg = json.loads(recv_msg)
-		send_msg = None
-		self.user = linux_user(recv_msg["Message"]["Username"])
-		if self.user.user_exists == False:
+		self.user = linux_user()	# Stores the user_name and if the user exists on the system
+		
+		while True:
+			try:
+				recv_msg = str(self.client_sock.recv(), FORMAT)
+			except BrokenPipeError as err:
+				print("[BROKEN PIPE] Connection to the client is broken")
+			except ConnectionResetError as err:
+				print("[CONNECTION RESET] Connection reseted by the client")
+			
+			send_msg = None
+			if self.client_sock.connection_closed:
+				print("Connection was closed by the client")
+				return
+			
+			recv_msg = json.loads(recv_msg)
+			if not self.user.user_exists:
+				self.user.check_user_exist(recv_msg["Message"]["Username"])
+				if self.user.user_exists == False:
+					send_msg = {
+						"Message_Type": Message_Types["ServerResponse"],
+						"ServerResponse": {
+							"Message": f"User \"{self.user.user_name}\" does not exist or is not allowed to log in"
+						}
+					}
+					self.client_sock.send(json.dumps(send_msg).encode(FORMAT))
+					#self.client_sock.close()
+					self.run()	# Give the client another time to authenticate
+					return
+			
 			send_msg = {
 				"Message_Type": Message_Types["ServerResponse"],
 				"ServerResponse": {
-					"Message": f"User \"{self.user.user_name}\" does not exist"
+					
 				}
 			}
-			self.client_sock.send(json.dumps(send_msg).encode(FORMAT))
-			client_socket.send(json.dumps({"Message_Type" : Message_Types["Close_Connection_Message"]}).encode(FORMAT))
-			client_socket.shutdown(socket.SHUT_RDWR)
-			client_socket.close()
-			return	# Exit the thread - user does not exist
-		
-		try:
-			while True:
-				return_message = {
-					"Message_Type": Message_Types["ServerResponse"],
-					"ServerResponse": {
+			try:
+				if recv_msg["Message_Type"] == Message_Types["Command"]:
+					if recv_msg["Message"]["Command"] == Commands["Change_Samba_Password"]:
+						username = recv_msg["Message"]["Username"]
+						old_password = recv_msg["Message"]["OldPassword"]
+						new_password = recv_msg["Message"]["NewPassword"]
 						
-					}
-				}
-				try:
-					if recv_msg["Message_Type"] == Message_Types["Command"]:
-						if recv_msg["Message"]["Command"] == Commands["Change_Samba_Password"]:
-							username = recv_msg["Message"]["Username"]
-							old_password = recv_msg["Message"]["OldPassword"]
-							new_password = recv_msg["Message"]["NewPassword"]
-
-							print(f"[RUNNING COMMAND] Changing password for user {username}")
-
-							(returncode, command_output) = change_samba_password(username, old_password, new_password)
-							if "NT_STATUS_LOGON_FAILURE" in command_output:
-								return_message["ServerResponse"]["Message"] = "Either the Server is not running or your password/username is not correct"
-							elif "NT_STATUS_CONNECTION_REFUSED" in command_output:
-								return_message["ServerResponse"]["Message"] = "Connection refused - The Server is not running"
-							elif returncode != 0:
-								return_message["ServerResponse"]["Message"] = "An unknown error occured - your password didnt changed..."
-							else:
-								return_message["ServerResponse"]["Message"] = f"Password successfully changed for user {username}"
-						return_message = json.dumps(return_message)
-						self.client_sock.send(return_message.encode(FORMAT))	# Send a response to the client
-
-
-					elif recv_msg["Message_Type"] == Message_Types["Close_Connection_Message"]:
-						print("[CONNECTION CLOSED] the connection was closed by the client.")
-						self.client_sock.shutdown(socket.SHUT_RDWR)
-						self.client_sock.close()
-						return
+						print(f"[RUNNING COMMAND] Changing password for user {username}")
+						(returncode, command_output) = change_samba_password(username, old_password, new_password)
+						
+						if "NT_STATUS_LOGON_FAILURE" in command_output:
+							send_msg["ServerResponse"]["Message"] = "Either the Server is not running or your password/username is not correct"
+						elif "NT_STATUS_CONNECTION_REFUSED" in command_output:
+							send_msg["ServerResponse"]["Message"] = "Connection refused - The Server is not running"
+						elif returncode != 0:
+							send_msg["ServerResponse"]["Message"] = "An unknown error occured - your password didnt changed..."
+						else:
+							send_msg["ServerResponse"]["Message"] = f"Password successfully changed for user {username}"
+					
+					send_msg = json.dumps(send_msg)
+					self.client_sock.send(send_msg.encode(FORMAT))	# Send a response to the client
 				
-				except KeyError as err:
-					print("[ERROR] A required parameter/value is missing in clients-message:")
-					print(err.args)
+				elif recv_msg["Message_Type"] == Message_Types["Close_Connection_Message"]:
+					print("[CONNECTION CLOSED] the connection was closed by the client.")
+					self.client_sock.shutdown(socket.SHUT_RDWR)
+					self.client_sock.close()
+					return
+			
+			except KeyError as err:
+				print("[ERROR] A required parameter/value is missing in clients-message:")
+				print(err.args)
+			# Wait for the clients next message
+			recv_msg = str(self.client_sock.recv(), FORMAT)
+			if self.client_sock.connection_closed:
+				print("Connection was closed by the client")
+				return
+			recv_msg = json.loads(recv_msg)
 
-				# Wait for the clients next message
-				recv_msg = str(self.client_sock.recv(), FORMAT)
-				recv_msg = json.loads(recv_msg)
-
-		
-		except BrokenPipeError as err:
-			print("[BROKEN PIPE]Connection to the client is broken")
-		except ConnectionResetError as err:
-			print("[CONNECTION RESET] Connection reseted by the client")
-		except ConnectionError as err:
-			print("[CONNECTION ERROR] " + str(err.args))
 	
 
 
@@ -169,8 +181,9 @@ if __name__ == "__main__":
 		print("[ERROR] Please use a Python-Interpreter-Version higher than " + str(MIN_PYTHON_VERSION))
 		exit(-1)
 	
+	print(f"[LISTENING] Server is listening at the port {PORT} for client-connections....")
+
 	while True:
-		print(f"[LISTENING] Server is listening at the port {PORT} for client-connections....")
 		(client_socket, client_addr) = socket_server.accept()
 		client_thread = client_handler(MySocket(client_socket), client_addr)
 		client_thread.start()
