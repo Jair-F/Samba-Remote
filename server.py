@@ -13,7 +13,7 @@ import grp
 
 os.system("clear")
 
-MIN_PYTHON_VERSION = (3, 10)
+MIN_PYTHON_VERSION = (3, 9)
 
 CONFIG_FILE_PATH = "/etc/SambaRemote/config.config"
 EXECUTABLE_PATH = "/usr/bin/SambaRemote"
@@ -99,6 +99,10 @@ class client_handler(threading.Thread):
 							(returncode, command_output) = change_samba_password(username, old_password, new_password)
 							if "NT_STATUS_LOGON_FAILURE" in command_output:
 								return_message["ServerResponse"]["Message"] = "Either the Server is not running or your password/username is not correct"
+							elif "NT_STATUS_CONNECTION_REFUSED" in command_output:
+								return_message["ServerResponse"]["Message"] = "Connection refused - The Server is not running"
+							elif returncode != 0:
+								return_message["ServerResponse"]["Message"] = "An unknown error occured - your password didnt changed..."
 							else:
 								return_message["ServerResponse"]["Message"] = f"Password successfully changed for user {username}"
 						return_message = json.dumps(return_message)
