@@ -1,21 +1,19 @@
 import MySocket
 import utils
-import time
 import json
 import socket   # https://docs.python.org/3/howto/sockets.html
 import os
 import threading
 import signal
-import subprocess
 import sys
-import pwd
-import grp
+import configparser
+import platform
 
 os.system("clear")
 
 MIN_PYTHON_VERSION = (3, 9)
 
-CONFIG_FILE_PATH = "/etc/SambaRemote/config.config"
+CONFIG_FILE_PATH = "/etc/SambaRemote/samba_remote.config"
 EXECUTABLE_PATH = "/usr/bin/SambaRemote"
 SUDO_GROUP = "sudo"
 VERSION = 1.0
@@ -128,10 +126,9 @@ FORMAT = "utf-8"
 ADDRESS = (SERVER_BIND_ADDRESS, PORT)    # tuple
 
 socket_server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-socket_server.bind(ADDRESS)
-socket_server.listen()
-
+conf_parser = configparser.ConfigParser()
 client_handler_threads = list()
+
 
 def terminate_handler(signa_lnumber, stack_frame):
 	"""
@@ -162,7 +159,33 @@ if __name__ == "__main__":
 	if sys.version_info.major < MIN_PYTHON_VERSION[0] or sys.version_info.minor < MIN_PYTHON_VERSION[1]:
 		print("[ERROR] Please use a Python-Interpreter-Version higher than " + str(MIN_PYTHON_VERSION))
 		exit(-1)
+		
+	if platform.system() != "Linux":
+		print("[ERROR] This server-script supports only Linux-based systems...", file=sys.stderr)
+
+	if os.getuid() != 0:	# Check if we run the script as root-sudo
+		print("[ERROR] This script must be run as root")
+		exit(-1)
 	
+	if not os.path.exists(CONFIG_FILE_PATH):
+		print(f"[ERROR] Config-File \"{CONFIG_FILE_PATH}\" does not exist or is not readable", file=sys.stderr)
+		exit(-1)
+	try:
+		conf_parser.read(CONFIG_FILE_PATH)
+	except configparser.ParsingError as err:
+		print(f"[ERROR] There was an error by parsing configFile: \"{CONFIG_FILE_PATH}\"", file=sys.stderr)
+		exit(-1)
+
+	try:
+		default_settings = conf_parser["DEFAULT"]
+		SERVER_BIND_ADDRESS = default_settings["ListenAddress"]
+		PORT = int(default_settings["Port"])
+		ADDRESS = (SERVER_BIND_ADDRESS, PORT)
+	except KeyError as err:
+		print("[ERROR] KeyError: " + err.args, file=sys.stderr)
+
+	socket_server.bind(ADDRESS)
+	socket_server.listen()
 	print(f"[LISTENING] Server is listening at the port {PORT} for client-connections....")
 
 	while True:
