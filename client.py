@@ -1,4 +1,4 @@
-from MySocket import *
+import MySocket
 import socket
 import sys
 import os
@@ -53,7 +53,7 @@ if __name__ == "__main__":
 	ADDRESS = (SERVER, PORT)
 
 	try:
-		client_socket = MySocket.create_connection(ADDRESS)
+		client_socket = MySocket.MySocket.create_connection(ADDRESS)
 	except ConnectionRefusedError as err:
 		print("Connection was refused by the server", file=sys.stderr)
 		input("Press ENTER to exit...")
