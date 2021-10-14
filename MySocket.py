@@ -81,7 +81,8 @@ class MySocket:
 		"""
 			Will send automaticly shutdown RW to the other side
 		"""
-		self._send_close_msg()	# Send close message to the other side to close the connection gracefully
+		if not self.connection_closed:
+			self._send_close_msg()	# Send close message to the other side to close the connection gracefully
 		self.shutdown(socket.SHUT_RDWR)
 		self.sock.close()
 
@@ -104,20 +105,15 @@ class MySocket:
 			The status message will only be send in the header as negative int value - Therefore
 			we will only send the header
 		"""
-		print(status_msg, flush=True)
 		if status_msg >= 0:
 			raise ValueError("status messages are only negative values. Passed value was: " + str(status_msg))
 		
 		status_msg_bytes = bytes(str(status_msg), self.HEADER_FORMAT)
-		print(status_msg_bytes, flush=True)
-		print(len(status_msg_bytes), flush=True)
 		if len(status_msg_bytes) > self.HEADER_SIZE:	# Check in case of a coding error the size of the status-message
 			raise OverflowError("Status message is to big for sending in the header")
 		
 		while len(status_msg_bytes) < self.HEADER_SIZE:
 			status_msg_bytes += b' '
-		
-		print(status_msg_bytes)
 		
 		self._send(status_msg_bytes)
 	
