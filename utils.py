@@ -1,4 +1,5 @@
 import subprocess
+import pwd
 
 
 def run_subprocess(args:tuple, input_pipe_str:str="", user:str=None) -> subprocess.CompletedProcess:
@@ -34,3 +35,20 @@ def reboot_system():
 	"""
 	run_subprocess("shutdown -r 0")
 
+class linux_user:
+	def __init__(self, user_name:str=None):
+		# Check if the username exist on the system
+		if user_name != None:
+			self.check_user_exist(user_name)
+		else:
+			self.user_name = None
+			self.user_exists = False
+		
+	def check_user_exist(self, user_name:str):
+		self.user_name = user_name
+		try:
+			pwd.getpwnam(user_name)
+		except KeyError as err:
+			self.user_exists = False
+		else:	# if no exception was raised the user exists
+			self.user_exists = True

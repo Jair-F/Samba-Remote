@@ -1,5 +1,5 @@
-from MySocket import *
-from utils import *
+import MySocket
+import utils
 import time
 import json
 import socket   # https://docs.python.org/3/howto/sockets.html
@@ -33,27 +33,9 @@ Commands = {
 
 message_handler = {
 	"Command": {
-		"Change_Samba_Password": change_samba_password,
+		"Change_Samba_Password": utils.change_samba_password,
 	}
 }
-
-class linux_user:
-	def __init__(self, user_name:str=None):
-		# Check if the username exist on the system
-		if user_name != None:
-			self.check_user_exist(user_name)
-		else:
-			self.user_name = None
-			self.user_exists = False
-		
-	def check_user_exist(self, user_name:str):
-		self.user_name = user_name
-		try:
-			pwd.getpwnam(user_name)
-		except KeyError as err:
-			self.user_exists = False
-		else:	# if no exception was raised the user exists
-			self.user_exists = True
 
 class client_handler(threading.Thread):
 	"""
@@ -72,7 +54,7 @@ class client_handler(threading.Thread):
 		"""
 			handles connection and command execution
 		"""
-		self.user = linux_user()	# Stores the user_name and if the user exists on the system
+		self.user = utils.linux_user()	# Stores the user_name and if the user exists on the system
 		
 		while not self._stop_event.is_set():	# Run untile the threads exit or a external thread has set the stop-Event
 			try:
@@ -116,7 +98,7 @@ class client_handler(threading.Thread):
 						new_password = recv_msg["Message"]["NewPassword"]
 						
 						print(f"[RUNNING COMMAND] Changing password for user {username}")
-						(returncode, command_output) = change_samba_password(username, old_password, new_password)
+						(returncode, command_output) = utils.change_samba_password(username, old_password, new_password)
 						
 						if "NT_STATUS_LOGON_FAILURE" in command_output:
 							send_msg["ServerResponse"]["Message"] = "Either the Server is not running or your password/username is not correct"
