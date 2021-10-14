@@ -190,7 +190,7 @@ if __name__ == "__main__":
 
 	while True:
 		(client_socket, client_addr) = socket_server.accept()
-		client_thread = client_handler(MySocket(client_socket), client_addr)
+		client_thread = client_handler(MySocket.MySocket(client_socket), client_addr)
 		client_thread.start()
 		client_handler_threads.append(client_thread)
 
