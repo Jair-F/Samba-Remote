@@ -32,17 +32,18 @@ if __name__ == "__main__":
 		print("Please use Python 3 or higher", file=sys.stderr)
 		exit(-1)
 
-	conf_parser = configparser.ConfigParser()
-	try:
-		conf_parser.read(DEFAULT_CONFIG_FILE_PATH)
-	except configparser.ParsingError as err:
-		print(f"Error while parsing {DEFAULT_CONFIG_FILE_PATH} - no default values: " + err.message)
+	if os.path.exists(DEFAULT_CONFIG_FILE_PATH):
+		conf_parser = configparser.ConfigParser()
+		try:
+			conf_parser.read(DEFAULT_CONFIG_FILE_PATH)
+		except configparser.ParsingError as err:
+			print(f"Error while parsing {DEFAULT_CONFIG_FILE_PATH} - no default values: " + err.message)
 
-	try:
-		PORT = conf_parser["DEFAULT"]["Port"]
-		SERVER = conf_parser["DEFAULT"]["Server"]
-	except KeyError as err:
-		print("KeyError: " + str(err.args))
+		try:
+			PORT = conf_parser["DEFAULT"]["Port"]
+			SERVER = conf_parser["DEFAULT"]["Server"]
+		except KeyError as err:
+			print("KeyError: " + str(err.args))
 
 	user_input = input(f"Server-IP/Domain[ENTER={SERVER}]: ")
 	SERVER = SERVER if len(user_input) == 0 else user_input
