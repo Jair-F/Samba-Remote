@@ -63,6 +63,10 @@ class client_handler(threading.Thread):
 		threading.Thread.__init__(self)
 		self.client_sock = client_sock
 		self.client_addr = client_addr
+		self._stop_event = threading.Event()
+
+	def set_stop_flag(self):
+		self._stop_event.set()
 
 	def run(self):
 		"""
@@ -70,7 +74,7 @@ class client_handler(threading.Thread):
 		"""
 		self.user = linux_user()	# Stores the user_name and if the user exists on the system
 		
-		while True:
+		while not self._stop_event.is_set():	# Run untile the threads exit or a external thread has set the stop-Event
 			try:
 				recv_msg = str(self.client_sock.recv(), FORMAT)
 			except BrokenPipeError as err:
@@ -125,22 +129,12 @@ class client_handler(threading.Thread):
 					
 					send_msg = json.dumps(send_msg)
 					self.client_sock.send(send_msg.encode(FORMAT))	# Send a response to the client
-				
-				elif recv_msg["Message_Type"] == Message_Types["Close_Connection_Message"]:
-					print("[CONNECTION CLOSED] the connection was closed by the client.")
-					self.client_sock.shutdown(socket.SHUT_RDWR)
-					self.client_sock.close()
-					return
 			
 			except KeyError as err:
 				print("[ERROR] A required parameter/value is missing in clients-message:")
 				print(err.args)
-			# Wait for the clients next message
-			recv_msg = str(self.client_sock.recv(), FORMAT)
-			if self.client_sock.connection_closed:
-				print("Connection was closed by the client")
-				return
-			recv_msg = json.loads(recv_msg)
+		
+		self.client_sock.close()
 
 	
 
@@ -166,9 +160,15 @@ def terminate_handler(signa_lnumber, stack_frame):
 	socket_server.shutdown(socket.SHUT_RDWR)
 	socket_server.close()
 
-	# Force Close all current connections
+	if len(client_handler_threads) > 0:
+		print(f"Wating for {len(client_handler_threads)} clients to close connection gracefully")
+
+	# Set for threads the stop flag
 	for thread in client_handler_threads:
-		pass
+		thread.set_stop_flag()
+	
+	for thread in client_handler_threads:
+		thread.join()
 	print("everything is closed...exciting")
 	exit(0)
 
