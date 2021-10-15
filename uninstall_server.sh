@@ -7,8 +7,8 @@ then
 fi
 
 echo "Stoping Samba_Remote-Server"
-systemctl stop SambaRemote.service
-systemctl disable SambaRemote.service
+systemctl stop samba_remote.service
+systemctl disable samba_remote.service
 
 echo "Deleting files"
 
