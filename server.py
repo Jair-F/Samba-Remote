@@ -99,7 +99,7 @@ class client_handler(threading.Thread):
 						(returncode, command_output) = utils.change_samba_password(username, old_password, new_password)
 						
 						if "NT_STATUS_LOGON_FAILURE" in command_output:
-							send_msg["ServerResponse"]["Message"] = "Either the Server is not running or your password/username is not correct"
+							send_msg["ServerResponse"]["Message"] = "Either the Samba-Server is not running or your password/username is not correct"
 						elif "NT_STATUS_CONNECTION_REFUSED" in command_output:
 							send_msg["ServerResponse"]["Message"] = "Connection refused - The Server is not running"
 						elif returncode != 0:
