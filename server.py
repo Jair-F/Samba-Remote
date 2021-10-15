@@ -1,5 +1,5 @@
-import MySocket
-import utils
+from modules import MySocket
+from server_modules import utils
 import json
 import socket   # https://docs.python.org/3/howto/sockets.html
 import os
@@ -13,7 +13,7 @@ os.system("clear")
 
 MIN_PYTHON_VERSION = (3, 9)
 
-CONFIG_FILE_PATH = "/etc/SambaRemote/samba_remote.config"
+CONFIG_FILE_PATH = "default_configs/samba_remote.config"
 EXECUTABLE_PATH = "/usr/bin/SambaRemote"
 SUDO_GROUP = "sudo"
 VERSION = 1.0
