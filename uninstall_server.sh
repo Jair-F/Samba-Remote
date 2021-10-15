@@ -14,3 +14,4 @@ echo "Deleting files"
 
 rm -rfd /usr/bin/Samba_Remote
 rm /etc/systemd/system/samba_remote.service
+rm -rfd /etc/Samba_Remote/
