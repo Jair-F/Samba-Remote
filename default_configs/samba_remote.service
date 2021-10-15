@@ -1,0 +1,31 @@
+# Documentation of systemd unit files
+# https://www.freedesktop.org/software/systemd/man/systemd.unit.html#
+# https://www.freedesktop.org/software/systemd/man/systemd.service.html
+
+# systemd target units list and Description
+# https://www.computernetworkingnotes.com/linux-tutorials/systemd-target-units-explained.html
+
+# systemd tutorial
+# https://www.digitalocean.com/community/tutorials/understanding-systemd-units-and-unit-files
+# https://linuxconfig.org/how-to-create-systemd-service-unit-in-linux
+
+[Unit]
+	Description=Samba Remote Control
+	Documentation="https://github.com/Jair-F/Samba-Remote"
+	
+	After=network.target avahi-daemon.socket
+	Requires=network.target
+	Wants=avahi-daemon.socket # For local Domain-Resolving
+
+[Service]
+	ExecStart=python3 /usr/bin/Samba_Remote/server.py
+	#ExecStop
+	#ExecReload
+	Type=simple
+	# In case we want to let the clients connection thread to close gracefully
+	TimeoutStopSec=10
+
+[Install]
+	WantedBy=multi-user.target
+	Alias=SambaRemote.service
+
