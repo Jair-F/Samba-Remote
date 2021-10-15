@@ -1,12 +1,12 @@
-import MySocket
+from modules import MySocket
 import socket
 import sys
 import os
 import json
 import configparser
 
-
 os.system("clear")
+
 
 Message_Types = {
 	"Command": "Command",
@@ -22,7 +22,7 @@ SERVER = ""
 ADDRESS = ()    # tuple
 FORMAT = "utf-8"
 VERSION = 1.0
-DEFAULT_CONFIG_FILE_PATH = "default_config.ini"
+DEFAULT_CONFIG_FILE_PATH = "default_configs/default_config.ini"
 
 
 
