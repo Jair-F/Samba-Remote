@@ -73,6 +73,7 @@ if __name__ == "__main__":
 	verify_new_password = input("Retype your new password: ")
 	if new_password != verify_new_password:
 		print("New Passwords doesnt match", file=sys.stderr)
+		input("Press ENTER to exit")
 		exit(0)
 
 	send_msg = {
