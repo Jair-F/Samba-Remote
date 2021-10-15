@@ -13,7 +13,7 @@ os.system("clear")
 
 MIN_PYTHON_VERSION = (3, 9)
 
-CONFIG_FILE_PATH = "default_configs/samba_remote.config"
+CONFIG_FILE_PATH = "/etc/Samba_Remote/samba_remote.config"
 EXECUTABLE_PATH = "/usr/bin/SambaRemote"
 SUDO_GROUP = "sudo"
 VERSION = 1.0
