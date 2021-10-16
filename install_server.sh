@@ -37,7 +37,7 @@ if [ -f "$CONF_FILE_PATH" ]; then
 		echo "Overwriting config file"
 		cp default_configs/samba_remote.config CONF_FILE_PATH
 		chown -R root $CONF_DIR
-		chmod -R 544 $CONF_DIR
+		chmod -R 644 $CONF_DIR
 	else
 		echo "Skipping copy default_config_file"
 	fi
@@ -45,7 +45,7 @@ else
 	echo "Copying config file"
 	cp default_configs/samba_remote.config "$CONF_FILE_PATH"
 	chown -R root $CONF_DIR
-	chmod -R 544 $CONF_DIR
+	chmod -R 644 $CONF_DIR
 fi
 
 
