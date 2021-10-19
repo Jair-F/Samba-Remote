@@ -1,4 +1,4 @@
-from modules import MySocket
+import MySocket
 import socket
 import sys
 import os
