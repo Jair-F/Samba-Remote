@@ -185,8 +185,6 @@ class Ui_MainWindow(QMainWindow):
 		self.hostname_label_2.setGeometry(QRect(10, 60, 111, 16))
 
 		self.setWindowTitle("Samba-Remote")
-		self.hostname_input.setText("raspberrypi.local")
-		self.port_input.setText("9090")
 		self.connect_button.setText("connect")
 		self.hostname_label.setText("Hostname/Domain:")
 		self.hostname_label_2.setText("Port:")
@@ -205,6 +203,12 @@ class Ui_MainWindow(QMainWindow):
 		error_msg_box.setIcon(QMessageBox.Critical)
 		error_msg_box.addButton(QMessageBox.Ok)
 		error_msg_box.show()
+
+	def set_default_input(self, hostname:str, port:int):
+		self.hostname = hostname
+		self.port = port
+		self.hostname_input.setText(hostname)
+		self.port_input.setText(str(port))
 	
 	def show_info_msg_box(self, msg:str):
 		error_msg_box = QMessageBox(self)
@@ -220,7 +224,7 @@ class Ui_MainWindow(QMainWindow):
 		if self.hostname == '':
 			self.show_error_msg_box("Hostname has to be a valid IP-Address or domain")
 			return
-		elif self.port == '':
+		elif self.port == '' or self.port <= 0 or self.port >= 65535:
 			self.show_error_msg_box("Port has to be a valid port(from 1-65535)")
 			return
 
