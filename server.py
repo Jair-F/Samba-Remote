@@ -1,4 +1,4 @@
-from modules import MySocket
+import MySocket
 from server_modules import utils
 import json
 import socket   # https://docs.python.org/3/howto/sockets.html
@@ -8,6 +8,8 @@ import signal
 import sys
 import configparser
 import platform
+import logging
+
 
 os.system("clear")
 
