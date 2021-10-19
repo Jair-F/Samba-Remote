@@ -25,9 +25,8 @@ PORT = 0
 SERVER = ""
 ADDRESS = ()    # tuple
 VERSION = 1.0
-DEFAULT_CONFIG_FILE_PATH = "default_configs/default_config.ini"
+DEFAULT_CONFIG_FILE_PATH = "default_config.ini"
 
-import Change_Password
 import Samba_Remote_GUI
 
 if __name__ == "__main__":
