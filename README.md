@@ -27,3 +27,6 @@ Run `chmod +x uninstall_server.sh && ./uninstall_server.sh`
 - Your executeable will be in the newly created directory `dist`
 
 **You cant create an executeable for example on Windows for Linux. You need an instance of the OS, on which the executeable should run afterwards!**
+
+## Client
+The file default_config.ini(`./default_configs/default_config.ini`) is the default configuration for the client-cli and gui. You can specify the default Hostname/LocalDomain and port so the user doesnt has to input it - but the user can change it though. This config-file has to be in the same directory in which the executeable or python file is. If there is no config-file you have to type in the port and server by hand every time.
