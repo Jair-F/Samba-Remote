@@ -23,8 +23,8 @@ if [ ! -d "$CONF_DIR" ]; then
 fi
 
 # Overwrite the files if they exist...
-cp -R server_modules modules $BIN_DIR
-cp server.py $BIN_DIR
+cp -R server_modules $BIN_DIR
+cp server.py MySocket.py $BIN_DIR
 chown -R root $BIN_DIR
 
 cp default_configs/samba_remote.service $SYSTEMD_SERVICE_FILE_PATH
