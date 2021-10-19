@@ -30,3 +30,7 @@ Run `chmod +x uninstall_server.sh && ./uninstall_server.sh`
 
 ## Client
 The file default_config.ini(`./default_configs/default_config.ini`) is the default configuration for the client-cli and gui. You can specify the default Hostname/LocalDomain and port so the user doesnt has to input it - but the user can change it though. This config-file has to be in the same directory in which the executeable or python file is. If there is no config-file you have to type in the port and server by hand every time.
+
+
+https://user-images.githubusercontent.com/78746086/137944451-8e845d05-e027-4027-ba9f-6b9534449cd7.mp4
+
