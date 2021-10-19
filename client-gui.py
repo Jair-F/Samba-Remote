@@ -55,7 +55,6 @@ if __name__ == "__main__":
 		except KeyError as err:
 			print("KeyError: " + str(err.args))
 
-	mainWindow.port = PORT
-	mainWindow.hostname = SERVER
+	mainWindow.set_default_input(SERVER, PORT)
 
 	sys.exit(app.exec())
