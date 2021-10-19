@@ -1,4 +1,4 @@
-#! /bin/bash
+#!/bin/bash
 
 if [ $UID -ne 0 ]
 then
