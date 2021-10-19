@@ -1,6 +1,6 @@
 import sys
 import json
-from modules import MySocket
+import MySocket
 import socket
 
 from PySide6.QtCore import *
@@ -224,7 +224,10 @@ class Ui_MainWindow(QMainWindow):
 		if self.hostname == '':
 			self.show_error_msg_box("Hostname has to be a valid IP-Address or domain")
 			return
-		elif self.port == '' or self.port <= 0 or self.port >= 65535:
+		elif not self.port.isdigit():
+			self.show_error_msg_box("Only digits are allowed as ports!")
+			return
+		elif self.port == '' or int(self.port) <= 0 or int(self.port) >= 65535:
 			self.show_error_msg_box("Port has to be a valid port(from 1-65535)")
 			return
 
