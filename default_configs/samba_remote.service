@@ -18,7 +18,7 @@
 	Wants=avahi-daemon.socket # For local Domain-Resolving
 
 [Service]
-	ExecStart=python3.10 /usr/bin/Samba_Remote/server.py
+	ExecStart=python3 /usr/bin/Samba_Remote/server.py
 	#ExecStop
 	#ExecReload
 	Type=simple
