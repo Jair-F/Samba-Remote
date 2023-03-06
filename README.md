@@ -1,5 +1,7 @@
 # Samba-Remote
 
+## !!important security note!! Until now there is no encryption between the server and the client. It will be added in the future but until now its not safe to use the tool
+
 ## Install Requirements(Client)
 ### **Client needs Python>=3.x**
 Maybe you want to install the requirements in a virtual environment 
